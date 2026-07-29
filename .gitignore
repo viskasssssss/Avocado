@@ -22,7 +22,7 @@
 *.dylib
 *.dll
 *.so.*
-
+*.exp
 
 # Fortran module files
 *.mod
@@ -44,6 +44,9 @@ bin/
 
 # Visual Studio
 .vs/
+*.user
+*.vcxproj*
+*.sln
 
 # Temporary files
 *.tmp
