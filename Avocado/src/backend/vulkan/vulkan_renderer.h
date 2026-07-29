@@ -30,9 +30,15 @@ namespace avocado
 		vk::Instance instance{ nullptr };
 		vk::DebugUtilsMessengerEXT debug_messenger{ nullptr };
 		vk::detail::DispatchLoaderDynamic dldi;
+		vk::SurfaceKHR surface;
 
 		vk::PhysicalDevice physical_device{ nullptr };
 		vk::Device device{ nullptr };
 		vk::Queue graphics_queue{ nullptr };
+		vk::Queue present_queue{ nullptr };
+		vk::SwapchainKHR swapchain;
+		std::vector<vk::Image> swapchain_images;
+		vk::Format swapchain_format;
+		vk::Extent2D swapchain_extent;
 	};
 }

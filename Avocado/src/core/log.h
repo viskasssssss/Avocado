@@ -19,5 +19,10 @@ namespace avocado
 #define AVO_ERROR(...) ::avocado::logger::get_logger()->error(__VA_ARGS__)
 #define AVO_WARN(...) ::avocado::logger::get_logger()->warn(__VA_ARGS__)
 #define AVO_INFO(...) ::avocado::logger::get_logger()->info(__VA_ARGS__)
-#define AVO_TRACE(...) ::avocado::logger::get_logger()->trace(__VA_ARGS__)
 #define AVO_CRITICAL(...) ::avocado::logger::get_logger()->critical(__VA_ARGS__)
+
+#ifdef AVO_DEBUG
+#define AVO_TRACE(...) ::avocado::logger::get_logger()->trace(__VA_ARGS__)
+#else
+#define AVO_TRACE(...)
+#endif

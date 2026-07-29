@@ -20,11 +20,16 @@ namespace avocado
 		inline void set_event_callback(const event_callback_fn& callback) override { m_data.event_callback = callback; }
 		void set_vsync(bool enabled) override;
 		bool is_vsync() const override;
+
+		GLFWwindow* GetRaw()
+		{
+			return m_window.get();
+		}
 	private:
 		virtual void init(const window_props& props);
 		virtual void shutdown();
 		
-		GLFWwindow* m_window;
+		std::shared_ptr<GLFWwindow> m_window;
 
 		struct window_data
 		{
