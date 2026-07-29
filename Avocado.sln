@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Avocado", "Avocado", "{890ED5F8-F5CE-502F-BE09-9AAC2A89950B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Avocado", "Avocado\Avocado.vcxproj", "{02589AAA-6E37-1946-774F-A41CE3AD7FA7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{02589AAA-6E37-1946-774F-A41CE3AD7FA7}.Debug|x64.ActiveCfg = Debug|x64
+		{02589AAA-6E37-1946-774F-A41CE3AD7FA7}.Debug|x64.Build.0 = Debug|x64
+		{02589AAA-6E37-1946-774F-A41CE3AD7FA7}.Release|x64.ActiveCfg = Release|x64
+		{02589AAA-6E37-1946-774F-A41CE3AD7FA7}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{02589AAA-6E37-1946-774F-A41CE3AD7FA7} = {890ED5F8-F5CE-502F-BE09-9AAC2A89950B}
+	EndGlobalSection
+EndGlobal
