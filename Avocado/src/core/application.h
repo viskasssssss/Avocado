@@ -4,6 +4,8 @@
 #include "events/built_in_events.h"
 #include "window.h"
 
+#include "backend/renderer.h"
+
 namespace avocado
 {
 	class application
@@ -17,7 +19,8 @@ namespace avocado
 	private:
 		bool on_window_close(window_close_event& e);
 
-		scope<window> m_window;
+		ref<renderer> m_renderer;
+		ref<window> m_window;
 		bool m_running = true;
 	};
 }

@@ -21,20 +21,23 @@ project "Avocado"
         "src",
         "thirdparty",
         "%{includeDir.GLFW}",
-        "%{includeDir.spdlog}"
+        "%{includeDir.spdlog}",
+        "%{includeDir.VulkanSDK}"
     }
 
     libdirs
     {
         "%{libraryDir.GLFW}",
-        "%{libraryDir.spdlog}"
+        "%{libraryDir.spdlog}",
+        "%{libraryDir.VulkanSDK}"
     }
 
     links
     {
         "glfw3",
         "opengl32",
-        "spdlogd"
+        "spdlogd",
+        "vulkan-1"
     }
 
     filter "system:windows"

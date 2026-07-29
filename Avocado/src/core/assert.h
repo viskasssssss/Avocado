@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.h"
+#include <filesystem>
 
 #ifdef AVO_ENABLE_ASSERTS
 #define AVO_INTERNAL_ASSERT_IMPL(type, check, msg, ...) { if(!(check)) { AVO##type##ERROR(msg, __VA_ARGS__); AVO_DEBUGBREAK(); } }

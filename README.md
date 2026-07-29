@@ -7,7 +7,7 @@ Avocado is a modular video editing engine prototype for Windows, built around a 
 
 Requirements:
 - Visual Studio 2022
-- Vulkan SDK
+- Vulkan SDK (1.4.xxx.x or greater)
 
 ### Building
 

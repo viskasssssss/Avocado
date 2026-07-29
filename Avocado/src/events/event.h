@@ -17,7 +17,7 @@ namespace avocado
 
 	enum event_category
 	{
-		None = 0,
+		none = 0,
 		event_category_application = BIT(0),
 		event_category_input = BIT(1),
 		event_category_keyboard = BIT(2),

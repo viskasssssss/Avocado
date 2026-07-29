@@ -32,6 +32,6 @@ namespace avocado
 		virtual void set_vsync(bool enabled) = 0;
 		virtual bool is_vsync() const = 0;
 
-		static window* create(const window_props& props = window_props());
+		static ref<window> create(const window_props& props = window_props());
 	};
 }

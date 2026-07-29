@@ -12,9 +12,9 @@ namespace avocado
 		AVO_CRITICAL("GLFW Error ({0}) | {1}", error, description);
 	}
 
-	window* window::create(const window_props& props)
+	ref<window> window::create(const window_props& props)
 	{
-		return new windows_window(props);
+		return create_ref<windows_window>(props);
 	}
 
 	windows_window::windows_window(const window_props& props)
