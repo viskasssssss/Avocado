@@ -2,6 +2,8 @@
 
 #include "backend/renderer.h"
 
+#include "helpers/vk_frame.h"
+
 #include <vulkan/vulkan.hpp>
 
 namespace avocado
@@ -19,6 +21,10 @@ namespace avocado
 
 		void make_instance();
 		void make_device();
+		void make_pipeline();
+		void finalize_setup();
+		void record_draw_commands(vk::CommandBuffer command_buffer, uint32_t image_index);
+		void render();
 
 		struct renderer_data
 		{
@@ -36,9 +42,18 @@ namespace avocado
 		vk::Device device{ nullptr };
 		vk::Queue graphics_queue{ nullptr };
 		vk::Queue present_queue{ nullptr };
-		vk::SwapchainKHR swapchain;
-		std::vector<vk::Image> swapchain_images;
+		vk::SwapchainKHR swapchain{ nullptr };
+		std::vector<avo_vk::swapchain_frame> swapchain_frames;
 		vk::Format swapchain_format;
 		vk::Extent2D swapchain_extent;
+
+		vk::PipelineLayout layout;
+		vk::RenderPass renderpass;
+		vk::Pipeline pipeline;
+
+		vk::CommandPool command_pool;
+		vk::CommandBuffer main_command_buffer;
+
+		int max_frames_in_flight, frame_number;
 	};
 }

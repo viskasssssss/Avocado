@@ -58,7 +58,7 @@ namespace avocado
 
 		m_window = std::shared_ptr<GLFWwindow>(glfwCreateWindow((int)props.width, (int)props.height, m_data.title.c_str(), nullptr, nullptr), glfw_window_deleter);
 		glfwSetWindowUserPointer(m_window.get(), &m_data);
-		set_vsync(true);
+		//set_vsync(true);
 
 		glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height)
 			{

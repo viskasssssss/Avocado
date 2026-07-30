@@ -16,6 +16,7 @@ namespace avocado
 		while (m_running)
 		{
 			m_window->on_update();
+			m_renderer->on_update();
 		}
 	}
 

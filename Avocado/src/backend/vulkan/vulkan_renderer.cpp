@@ -4,6 +4,11 @@
 #include "helpers/vk_instance.h"
 #include "helpers/vk_logging.h"
 #include "helpers/vk_device.h"
+#include "helpers/vk_swapchain.h"
+#include "helpers/vk_pipeline.h"
+#include "helpers/vk_framebuffer.h"
+#include "helpers/vk_commands.h"
+#include "helpers/vk_sync.h"
 
 #ifdef AVO_PLATFORM_WINDOWS
 #include "platform/windows/windows_window.h"
@@ -23,7 +28,7 @@ namespace avocado
 
 	void vulkan_renderer::on_update()
 	{
-		// TODO: implement Vulkan rendering update logic
+		render();
 	}
 
 	void vulkan_renderer::init(const renderer_props& props)
@@ -34,10 +39,30 @@ namespace avocado
 		AVO_INFO("VK: Created Vulkan instance");
 		make_device();
 		AVO_INFO("VK: Created device");
+		make_pipeline();
+		AVO_INFO("VK: Created pipeline");
+		finalize_setup();
 	}
 
 	void vulkan_renderer::shutdown()
 	{
+		device.waitIdle();
+
+		device.destroyCommandPool(command_pool);
+
+		device.destroyPipeline(pipeline);
+		device.destroyPipelineLayout(layout);
+		device.destroyRenderPass(renderpass);
+
+		for (avo_vk::swapchain_frame frame : swapchain_frames)
+		{
+			device.destroyImageView(frame.image_view);
+			device.destroyFramebuffer(frame.framebuffer);
+			device.destroyFence(frame.in_flight);
+			device.destroySemaphore(frame.image_available);
+			device.destroySemaphore(frame.render_finished);
+		}
+
 		device.destroySwapchainKHR(swapchain);
 		device.destroy();
 
@@ -82,8 +107,133 @@ namespace avocado
 			device, physical_device, surface, m_data.window->get_width(), m_data.window->get_height()
 		);
 		swapchain = bundle.swapchain;
-		swapchain_images = bundle.images;
+		swapchain_frames = bundle.frames;
 		swapchain_format = bundle.format;
 		swapchain_extent = bundle.extent;
+		max_frames_in_flight = static_cast<int>(swapchain_frames.size());
+		frame_number = 0;
+	}
+
+	void vulkan_renderer::make_pipeline()
+	{
+		avo_vk::GraphicsPipelineInBundle specification = {};
+		specification.device = device;
+		specification.vertex_filepath = "shaders/vulkan/vertex-test.spv";
+		specification.fragment_filepath = "shaders/vulkan/fragment-test.spv";
+		specification.swapchain_extent = swapchain_extent;
+		specification.swapchain_image_format = swapchain_format;
+
+		avo_vk::GraphicsPipelineOutBundle output = avo_vk::make_graphics_pipeline(specification);
+		layout = output.layout;
+		renderpass = output.renderpass;
+		pipeline = output.pipeline;
+	}
+
+	void vulkan_renderer::finalize_setup()
+	{
+		avo_vk::framebuffer_input framebuffer_input;
+		framebuffer_input.device = device;
+		framebuffer_input.renderpass = renderpass;
+		framebuffer_input.swapchain_extent = swapchain_extent;
+		avo_vk::make_framebuffers(framebuffer_input, swapchain_frames);
+
+		command_pool = avo_vk::make_command_pool(device, physical_device, surface);
+
+		avo_vk::command_buffer_input_chunk command_buffer_input = { device, command_pool, swapchain_frames };
+		main_command_buffer = avo_vk::make_command_buffers(command_buffer_input);
+
+		for (avo_vk::swapchain_frame& frame : swapchain_frames)
+		{
+			frame.in_flight = avo_vk::make_fence(device);
+			frame.image_available = avo_vk::make_semaphore(device);
+			frame.render_finished = avo_vk::make_semaphore(device);
+		}
+	}
+
+	void vulkan_renderer::record_draw_commands(vk::CommandBuffer command_buffer, uint32_t image_index)
+	{
+
+		vk::CommandBufferBeginInfo begin_info = {};
+		try {
+			command_buffer.begin(begin_info);
+		}
+		catch (vk::SystemError err) {
+			AVO_CRITICAL("Failed to begin recording command buffer");
+		}
+
+		vk::RenderPassBeginInfo render_pass_info = {};
+		render_pass_info.renderPass = renderpass;
+		render_pass_info.framebuffer = swapchain_frames[image_index].framebuffer;
+		render_pass_info.renderArea.offset.x = 0;
+		render_pass_info.renderArea.offset.y = 0;
+		render_pass_info.renderArea.extent = swapchain_extent;
+
+		vk::ClearValue clear_color = { std::array<float, 4>{1.0f, 0.5f, 0.25f, 1.0f} };
+		render_pass_info.clearValueCount = 1;
+		render_pass_info.pClearValues = &clear_color;
+
+		command_buffer.beginRenderPass(&render_pass_info, vk::SubpassContents::eInline);
+
+		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+
+		command_buffer.draw(3, 1, 0, 0);
+
+		command_buffer.endRenderPass();
+
+		try {
+			command_buffer.end();
+		}
+		catch (vk::SystemError err) {
+			AVO_CRITICAL("Failed to finish recording command buffer");
+		}
+	}
+
+	void vulkan_renderer::render()
+	{
+		device.waitForFences(1, &swapchain_frames[frame_number].in_flight, VK_TRUE, UINT64_MAX);
+		device.resetFences(1, &swapchain_frames[frame_number].in_flight);
+
+		uint32_t image_index{ 
+			device.acquireNextImageKHR(
+				swapchain, UINT64_MAX, swapchain_frames[frame_number].image_available, nullptr
+			).value
+		};
+
+		vk::CommandBuffer command_buffer = swapchain_frames[frame_number].command_buffer;
+
+		command_buffer.reset();
+
+		record_draw_commands(command_buffer, image_index);
+
+		vk::SubmitInfo submit_info = {};
+		vk::Semaphore wait_semaphores[] = { swapchain_frames[frame_number].image_available };
+		vk::PipelineStageFlags wait_stages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+		submit_info.waitSemaphoreCount = 1;
+		submit_info.pWaitSemaphores = wait_semaphores;
+		submit_info.pWaitDstStageMask = wait_stages;
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &command_buffer;
+		vk::Semaphore signal_semaphores[] = { swapchain_frames[frame_number].render_finished };
+		submit_info.signalSemaphoreCount = 1;
+		submit_info.pSignalSemaphores = signal_semaphores;
+
+		try {
+			graphics_queue.submit(submit_info, swapchain_frames[frame_number].in_flight);
+		}
+		catch (vk::SystemError err) {
+			AVO_CRITICAL("Failed to submit draw command buffer");
+		}
+
+		vk::PresentInfoKHR present_info = {};
+		present_info.waitSemaphoreCount = 1;
+		present_info.pWaitSemaphores = signal_semaphores;
+		vk::SwapchainKHR swapchains[] = { swapchain };
+		present_info.swapchainCount = 1;
+		present_info.pSwapchains = swapchains;
+		present_info.pImageIndices = &image_index;
+
+		present_queue.presentKHR(present_info);
+
+		frame_number = (frame_number + 1) % max_frames_in_flight;
 	}
 }

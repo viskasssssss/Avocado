@@ -12,6 +12,7 @@ namespace avocado
 			return create_ref<vulkan_renderer>(props);
 		default:
 			AVO_ASSERT(false);
+			return false;
 		}
 	}
 }

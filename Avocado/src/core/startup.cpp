@@ -12,12 +12,9 @@ int main(int argc, char** argv)
 	// startup is not final | changes will be made
 
 	logger::init();
-	AVO_ERROR("TEST");
-	AVO_WARN("TEST");
-	AVO_INFO("TEST");
-	AVO_TRACE("TEST");
-	AVO_CRITICAL("TEST");
 
+	std::filesystem::path cwd = std::filesystem::current_path();
+	AVO_INFO("Working in {0}", cwd.string().c_str());
 	AVO_INFO("Creating application");
 
 	application app = application();

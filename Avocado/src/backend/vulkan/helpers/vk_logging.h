@@ -21,7 +21,7 @@ namespace avo_vk
 	{
 		vk::DebugUtilsMessengerCreateInfoEXT create_info = vk::DebugUtilsMessengerCreateInfoEXT(
 			vk::DebugUtilsMessengerCreateFlagsEXT(),
-			vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+			vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
 			vk::PFN_DebugUtilsMessengerCallbackEXT(debug_callback),
 			nullptr
@@ -194,5 +194,32 @@ namespace avo_vk
 		}
 
 		return "None / Undefined";
+	}
+
+	void log_device_properties(const vk::PhysicalDevice& device)
+	{
+		vk::PhysicalDeviceProperties properties = device.getProperties();
+
+		AVO_TRACE("VK: Device name: {0}", (const char*)properties.deviceName);
+
+		AVO_TRACE("VK: Device type:");
+
+		switch (properties.deviceType)
+		{
+		case (vk::PhysicalDeviceType::eCpu):
+			AVO_TRACE("VK: \tCPU");
+			break;
+		case (vk::PhysicalDeviceType::eDiscreteGpu):
+			AVO_TRACE("VK: \tDiscrete GPU");
+			break;
+		case (vk::PhysicalDeviceType::eIntegratedGpu):
+			AVO_TRACE("VK: \tIntegrated GPU");
+			break;
+		case (vk::PhysicalDeviceType::eVirtualGpu):
+			AVO_TRACE("VK: \tVirtual GPU");
+			break;
+		default:
+			AVO_TRACE("VK: \tOther");
+		}
 	}
 }

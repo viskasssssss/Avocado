@@ -6,11 +6,11 @@ Avocado is a modular video editing engine, built around a plugin-driven architec
 
 ## Building
 
->Building Avocado is complex at this stage of development and will be changed in the future.
+>Building Avocado is complex and temporary at this stage of development and will be changed in the future.
 
 Requirements:
 - Visual Studio 2022
-- Vulkan SDK (1.4.xxx.x or greater)=
+- Vulkan SDK (1.4.xxx.x or greater)
 
 ### Building Steps for Windows:
 
@@ -24,9 +24,9 @@ Requirements:
 
 3. Once you have build them, copy the results to the appropriate folders, for example: [your_path_to_avocado]/Avocado/GLFW/lib
 
-4. Once you have completed the steps above, open the "build" folder, run the "win_generate_project.bat" script, and ensure there are no errors. After that, open the solution and build it.
+4. After generating the project, compile the shaders required for Avocado to run. To do this, navigate to "Avocado/shaders/vulkan/", locate the "test-shader-compile.bat" batch file, run it, and ensure there are no errors.
 
-5. You can find the result at the following path: bin/Release.[your system].x86_64/Avocado
+5. Once you have completed the steps above, open the "build" folder, run the "win_generate_project.bat" script, and ensure there are no errors. After that, open the solution and build it.
 
 ## Usage
 Avocado on current stage is unusable and WIP
