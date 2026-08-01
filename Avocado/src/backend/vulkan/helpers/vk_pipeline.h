@@ -23,12 +23,16 @@ namespace avo_vk
 		vk::Pipeline pipeline;
 	};
 
-	vk::PipelineLayout make_pipeline_layout(vk::Device device)
+	vk::PipelineLayout make_pipeline_layout(
+		vk::Device device,
+		uint32_t push_constant_count = 0,
+		const vk::PushConstantRange* push_constants = nullptr
+	)
 	{
 		vk::PipelineLayoutCreateInfo layout_info;
 		layout_info.flags = vk::PipelineLayoutCreateFlags();
-		layout_info.setLayoutCount = 0;
-		layout_info.pushConstantRangeCount = 0;
+		layout_info.pushConstantRangeCount = push_constant_count;
+		layout_info.pPushConstantRanges = push_constants;
 		try {
 			return device.createPipelineLayout(layout_info);
 		} 
@@ -165,7 +169,9 @@ namespace avo_vk
 		color_blending.blendConstants[3] = 0.0f;
 		pipeline_info.pColorBlendState = &color_blending;
 
-		vk::PipelineLayout layout = make_pipeline_layout(specification.device);
+		vk::PipelineLayout layout = make_pipeline_layout(
+			specification.device
+		);
 		pipeline_info.layout = layout;
 
 		vk::RenderPass renderpass = make_renderpass(specification.device, specification.swapchain_image_format);

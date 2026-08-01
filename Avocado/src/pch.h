@@ -17,6 +17,7 @@
 #include "core/key_codes.h"
 #include "core/mouse_codes.h"
 #include "core/defines.h"
+#include "core/math.h"
 #include "events/built_in_events.h"
 
 #ifdef AVO_PLATFORM_WINDOWS

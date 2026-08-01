@@ -15,6 +15,7 @@ includeDir = {}
 includeDir["GLFW"] = "thirdparty/GLFW/include"
 includeDir["spdlog"] = "thirdparty/spdlog/include"
 includeDir["VulkanSDK"] =  "%{VULKAN_SDK}/Include"
+includeDir["glm"] =  "thirdparty/glm/include"
 
 libraryDir = {}
 libraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"

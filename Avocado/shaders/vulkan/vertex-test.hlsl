@@ -1,8 +1,8 @@
 static const float2 positions[3] =
 {
-    float2(0.0, -0.5),
-	float2(0.5, 0.5),
-	float2(-0.5, 0.5)
+    float2(0.0, -0.05),
+	float2(0.05, 0.05),
+	float2(-0.05, 0.05)
 };
 
 static const float3 colors[3] =
@@ -11,6 +11,13 @@ static const float3 colors[3] =
 	float3(0.0, 1.0, 0.0),
 	float3(0.0, 0.0, 1.0)
 };
+
+//struct Constants
+//{
+//    float4x4 model;
+//};
+//
+//[[vk::push_constant]] Constants constants;
 
 struct VS_OUTPUT
 {

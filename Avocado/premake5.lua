@@ -22,7 +22,8 @@ project "Avocado"
         "thirdparty",
         "%{includeDir.GLFW}",
         "%{includeDir.spdlog}",
-        "%{includeDir.VulkanSDK}"
+        "%{includeDir.VulkanSDK}",
+        "%{includeDir.glm}"
     }
 
     libdirs
