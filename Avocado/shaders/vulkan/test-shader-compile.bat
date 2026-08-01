@@ -6,8 +6,8 @@ if not defined VULKAN_SDK (
     exit /b 1
 )
 
-"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=frag fragment-test.hlsl -o fragment-test.spv
-"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=vert vertex-test.hlsl -o vertex-test.spv
+"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=vert vertex-test.vert -o vertex-test.spv
+"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=frag fragment-test.frag -o fragment-test.spv
 
 endlocal
 PAUSE

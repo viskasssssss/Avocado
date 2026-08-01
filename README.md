@@ -24,7 +24,7 @@ Requirements:
 
 3. Once you have build them, copy the results to the appropriate folders, for example: [your_path_to_avocado]/Avocado/GLFW/lib
 
-4. After generating the project, compile the shaders required for Avocado to run. To do this, navigate to "Avocado/shaders/vulkan/", locate the "test-shader-compile.bat" batch file, run it, and ensure there are no errors.
+4. After that, compile the shaders required for Avocado to run. To do this, navigate to "Avocado/shaders/vulkan/", locate the "test-shader-compile.bat" batch file, run it, and ensure there are no errors.
 
 5. Once you have completed the steps above, open the "build" folder, run the "win_generate_project.bat" script, and ensure there are no errors. After that, open the solution and build it.
 

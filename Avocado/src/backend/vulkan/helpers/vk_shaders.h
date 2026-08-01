@@ -2,22 +2,44 @@
 
 #include "pch.h"
 
+#include <filesystem>
 #include <vulkan/vulkan.hpp>
 
 namespace avo_vk
 {
-    std::vector<char> read_file(const std::string& filename) {
+    std::string resolve_shader_path(const std::string& filename)
+    {
+        const std::filesystem::path input_path = filename;
+        const std::filesystem::path cwd = std::filesystem::current_path();
+        const std::vector<std::filesystem::path> candidates = {
+            input_path,
+            cwd / input_path,
+            cwd / "Avocado" / input_path,
+            cwd / ".." / ".." / ".." / "Avocado" / input_path,
+            cwd / ".." / ".." / ".." / ".." / "Avocado" / input_path
+        };
 
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+        for (const std::filesystem::path& candidate : candidates)
+        {
+            if (std::filesystem::exists(candidate))
+                return candidate.string();
+        }
+
+        return filename;
+    }
+
+    std::vector<char> read_file(const std::string& filename) {
+        const std::string resolved_path = resolve_shader_path(filename);
+        std::ifstream file(resolved_path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
-            AVO_CRITICAL("VK: Failed to read file '{0}'", filename.c_str());
+            AVO_CRITICAL("VK: Failed to read file '{0}'", resolved_path.c_str());
             return {};
         }
 
         std::streamsize filesize = file.tellg();
         if (filesize < 0) {
-            AVO_CRITICAL("VK: Failed to determine size for file '{0}'", filename.c_str());
+            AVO_CRITICAL("VK: Failed to determine size for file '{0}'", resolved_path.c_str());
             return {};
         }
 
@@ -25,7 +47,7 @@ namespace avo_vk
         file.seekg(0, std::ios::beg);
 
         if (!file.read(buffer.data(), filesize)) {
-            AVO_CRITICAL("VK: Failed to read data from file '{0}'", filename.c_str());
+            AVO_CRITICAL("VK: Failed to read data from file '{0}'", resolved_path.c_str());
             return {};
         }
 

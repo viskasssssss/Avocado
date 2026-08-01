@@ -10,6 +10,8 @@
 #include "helpers/vk_commands.h"
 #include "helpers/vk_sync.h"
 
+#include "core/math.h"
+
 #ifdef AVO_PLATFORM_WINDOWS
 #include "platform/windows/windows_window.h"
 #endif
@@ -34,6 +36,7 @@ namespace avocado
 	void vulkan_renderer::init(const renderer_props& props)
 	{
 		m_data.window = props.window;
+		create_default_pipeline_specification();
 
 		make_instance();
 		AVO_INFO("VK: Created Vulkan instance");
@@ -52,6 +55,10 @@ namespace avocado
 
 		device.destroyPipeline(pipeline);
 		device.destroyPipelineLayout(layout);
+		device.destroyDescriptorSetLayout(descriptor_set_layout);
+		device.destroyDescriptorPool(descriptor_pool);
+		if (uniform_buffer) device.destroyBuffer(uniform_buffer);
+		if (uniform_buffer_memory) device.freeMemory(uniform_buffer_memory);
 		device.destroyRenderPass(renderpass);
 
 		for (avo_vk::swapchain_frame frame : swapchain_frames)
@@ -118,8 +125,9 @@ namespace avocado
 	{
 		avo_vk::GraphicsPipelineInBundle specification = {};
 		specification.device = device;
-		specification.vertex_filepath = "shaders/vulkan/vertex-test.spv";
-		specification.fragment_filepath = "shaders/vulkan/fragment-test.spv";
+		specification.physical_device = physical_device;
+		specification.shader_stages = default_pipeline_spec.shader_stages;
+		specification.push_constants = default_pipeline_spec.push_constants;
 		specification.swapchain_extent = swapchain_extent;
 		specification.swapchain_image_format = swapchain_format;
 
@@ -127,6 +135,11 @@ namespace avocado
 		layout = output.layout;
 		renderpass = output.renderpass;
 		pipeline = output.pipeline;
+		descriptor_set_layout = output.descriptor_set_layout;
+		descriptor_pool = output.descriptor_pool;
+		descriptor_set = output.descriptor_set;
+		uniform_buffer = output.uniform_buffer;
+		uniform_buffer_memory = output.uniform_buffer_memory;
 	}
 
 	void vulkan_renderer::finalize_setup()
@@ -150,8 +163,101 @@ namespace avocado
 		}
 	}
 
+	void vulkan_renderer::create_default_pipeline_specification()
+	{
+		// just a test for now
+		default_pipeline_spec.shader_stages = {
+			{"shaders/vulkan/vertex-test.spv", shader_stage::vertex},
+			{"shaders/vulkan/fragment-test.spv", shader_stage::fragment}
+		};
+
+		renderer_push_constant push_constant = {};
+		push_constant.stage_flags = static_cast<uint32_t>(shader_stage::vertex);
+		push_constant.offset = 0;
+		push_constant.size = sizeof(float) * 4;
+		push_constant.data.resize(push_constant.size);
+		default_pipeline_spec.push_constants.push_back(push_constant);
+		default_pipeline_spec.clear_color = {0.25f, 0.25f, 0.3f, 1.0f};
+		active_pipeline_spec = default_pipeline_spec;
+	}
+
+	void vulkan_renderer::render_start(const std::array<float, 4>& clear_color)
+	{
+		if (render_pass_begun)
+			return;
+
+		vk::RenderPassBeginInfo render_pass_info = {};
+		render_pass_info.renderPass = renderpass;
+		render_pass_info.framebuffer = swapchain_frames[current_image_index].framebuffer;
+		render_pass_info.renderArea.offset.x = 0;
+		render_pass_info.renderArea.offset.y = 0;
+		render_pass_info.renderArea.extent = swapchain_extent;
+
+		vk::ClearValue clear_color_value = { std::array<float, 4>{clear_color[0], clear_color[1], clear_color[2], clear_color[3]} };
+		render_pass_info.clearValueCount = 1;
+		render_pass_info.pClearValues = &clear_color_value;
+
+		active_command_buffer.beginRenderPass(&render_pass_info, vk::SubpassContents::eInline);
+		active_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+		if (descriptor_set)
+			active_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, 1, &descriptor_set, 0, nullptr);
+		render_pass_begun = true;
+	}
+
+	void vulkan_renderer::render_end()
+	{
+		if (!render_pass_begun)
+			return;
+
+		active_command_buffer.endRenderPass();
+		render_pass_begun = false;
+	}
+
+	void vulkan_renderer::bind_pipeline(const renderer_pipeline_specification& pipeline_spec)
+	{
+		active_pipeline_spec = pipeline_spec;
+		if (active_command_buffer && render_pass_begun)
+			active_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+	}
+
+	void vulkan_renderer::push_constants(const renderer_push_constant& push_constant)
+	{
+		if (!layout)
+			return;
+
+		const uint32_t size = push_constant.size ? push_constant.size : static_cast<uint32_t>(push_constant.data.size());
+		if (size == 0 || push_constant.data.empty())
+			return;
+
+		if (active_command_buffer && render_pass_begun)
+		{
+			active_command_buffer.pushConstants(
+				layout,
+				static_cast<vk::ShaderStageFlags>(push_constant.stage_flags),
+				push_constant.offset,
+				size,
+				push_constant.data.data()
+			);
+			return;
+		}
+
+		pending_push_constant = push_constant;
+		has_pending_push_constant = true;
+	}
+
+	void vulkan_renderer::draw(uint32_t vertex_count, uint32_t instance_count)
+	{
+		if (!render_pass_begun)
+			return;
+
+		active_command_buffer.draw(vertex_count, instance_count, 0, 0);
+	}
+
 	void vulkan_renderer::record_draw_commands(vk::CommandBuffer command_buffer, uint32_t image_index)
 	{
+		current_image_index = image_index;
+		active_command_buffer = command_buffer;
+		render_pass_begun = false;
 
 		vk::CommandBufferBeginInfo begin_info = {};
 		try {
@@ -161,24 +267,21 @@ namespace avocado
 			AVO_CRITICAL("Failed to begin recording command buffer");
 		}
 
-		vk::RenderPassBeginInfo render_pass_info = {};
-		render_pass_info.renderPass = renderpass;
-		render_pass_info.framebuffer = swapchain_frames[image_index].framebuffer;
-		render_pass_info.renderArea.offset.x = 0;
-		render_pass_info.renderArea.offset.y = 0;
-		render_pass_info.renderArea.extent = swapchain_extent;
+		render_start(active_pipeline_spec.clear_color);
+		bind_pipeline(active_pipeline_spec);
 
-		vk::ClearValue clear_color = { std::array<float, 4>{1.0f, 0.5f, 0.25f, 1.0f} };
-		render_pass_info.clearValueCount = 1;
-		render_pass_info.pClearValues = &clear_color;
+		renderer_push_constant push_constant_to_use = pending_push_constant;
+		if (push_constant_to_use.data.empty() || push_constant_to_use.size == 0)
+		{
+			if (!active_pipeline_spec.push_constants.empty())
+				push_constant_to_use = active_pipeline_spec.push_constants.front();
+		}
 
-		command_buffer.beginRenderPass(&render_pass_info, vk::SubpassContents::eInline);
+		if (!push_constant_to_use.data.empty() && push_constant_to_use.size != 0)
+			push_constants(push_constant_to_use);
 
-		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-
-		command_buffer.draw(3, 1, 0, 0);
-
-		command_buffer.endRenderPass();
+		draw(3, 1);
+		render_end();
 
 		try {
 			command_buffer.end();
